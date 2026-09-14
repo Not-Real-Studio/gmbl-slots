@@ -1,15 +1,15 @@
-// Оценка линии: фикстуры sample-slot перенесены как есть (test/mechanics.test.mjs). Результаты
+// Оценка линии на синтетической фикстуре SAMPLE. Результаты
 // обязаны совпасть — иначе это не перенос механики, а её переписывание.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { evaluateLine, evaluatePaylines, evaluateTuple, totalWin } from '../src/index.ts';
-import { JACKPOTS, MONEY, sample-slot, TOP_LINE, WILD, topRow } from './_fixtures.ts';
+import { JACKPOTS, MONEY, SAMPLE, TOP_LINE, WILD, topRow } from './_fixtures.ts';
 
 const TB = 100;
-const pt = sample-slot.paytable;
+const pt = SAMPLE.paytable;
 const evalTop = (ids: number[]): { symbol: number; length: number; win: number } | null =>
-  evaluateLine(topRow(ids), TOP_LINE, sample-slot);
+  evaluateLine(topRow(ids), TOP_LINE, SAMPLE);
 
 test('каждый платящий символ × каждая длина = paytable', () => {
   for (const sym of Object.keys(pt)) {
@@ -31,10 +31,10 @@ test('длина 1–2 не платит', () => {
   assert.equal(evalTop([20, 20, MONEY, MONEY, MONEY]), null);
 });
 
-test('wild платит сам: линия из пяти wild = 20 ×TB', () => {
+test('wild платит сам: линия из пяти wild = 10 ×TB', () => {
   const w = evalTop([WILD, WILD, WILD, WILD, WILD]);
   assert.equal(w?.symbol, WILD);
-  assert.equal(w?.win, 20 * TB);
+  assert.equal(w?.win, 10 * TB);
 });
 
 test('wild подменяет платящий символ', () => {
@@ -66,19 +66,19 @@ test('символ без строки paytable рвёт комбинацию (�
   }
 });
 
-test('потолок: полное поле wild = 300 ×TB на 15 линиях', () => {
+test('потолок: полное поле wild = 100 ×TB на 10 линиях', () => {
   const full: number[][] = [];
   for (let r = 0; r < 5; r++) full.push([WILD, WILD, WILD]);
-  const wins = evaluatePaylines(full, sample-slot);
-  assert.equal(wins.length, sample-slot.lines.length);
-  assert.equal(totalWin(wins), 300 * TB);
-  assert.equal(evaluateLine(full, [0, 1, 2, 1, 0], sample-slot)?.symbol, WILD);
+  const wins = evaluatePaylines(full, SAMPLE);
+  assert.equal(wins.length, SAMPLE.lines.length);
+  assert.equal(totalWin(wins), 100 * TB);
+  assert.equal(evaluateLine(full, [0, 1, 2, 1, 0], SAMPLE)?.symbol, WILD);
 });
 
 test('evaluateLine — обёртка над evaluateTuple: одна логика, два входа', () => {
   const ids = [WILD, 20, 20, 4, 4];
-  const t = evaluateTuple(ids, sample-slot);
-  const l = evaluateLine(topRow(ids), TOP_LINE, sample-slot);
+  const t = evaluateTuple(ids, SAMPLE);
+  const l = evaluateLine(topRow(ids), TOP_LINE, SAMPLE);
   assert.equal(t?.win, l?.win);
   assert.equal(t?.symbol, l?.symbol);
   assert.equal(t?.length, l?.length);

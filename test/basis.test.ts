@@ -8,7 +8,7 @@ import {
   setMetrics, specialDist, stripFreq, triggerProb
 } from '../src/index.ts';
 import type { SetMetrics, SlotSpec, SymbolId } from '../src/index.ts';
-import { sample-slot, SMALL, SMALL_REELS, bruteForce } from './_fixtures.ts';
+import { SAMPLE, SMALL, SMALL_REELS, bruteForce } from './_fixtures.ts';
 
 const EPS = 1e-12;
 const brute = bruteForce(SMALL, SMALL_REELS, (f, s) => evaluatePaylines(f, s));
@@ -110,5 +110,5 @@ test('потолок перебора hit заявлен явно', () => {
     for (let i = 0; i < 200; i++) s.push(i % 2 === 0 ? 20 : 4);
     long.push(s);
   }
-  assert.throws(() => hitRate(sample-slot, long), /стоп-сочетаний по 3 барабанам \(потолок/);
+  assert.throws(() => hitRate(SAMPLE, long), /стоп-сочетаний по 3 барабанам \(потолок/);
 });

@@ -7,7 +7,7 @@ import {
   fieldSpecialBounds, setMetrics, specialCountInWindow, specialGap, tuneReels, TunerError
 } from '../src/index.ts';
 import type { CountBound, ReelTarget, SymbolId, TunerTarget } from '../src/index.ts';
-import { MONEY, sample-slot, WILD } from './_fixtures.ts';
+import { MONEY, SAMPLE, WILD } from './_fixtures.ts';
 
 const H1 = 20, H2 = 21, M1 = 10, M2 = 11, LA = 1, LK = 2, LQ = 3, LJ = 4;
 const SYMBOLS = [WILD, H1, H2, M1, M2, LA, LK, LQ, LJ, MONEY];
@@ -29,7 +29,7 @@ test('сходится к заданному rtp в пределах допус�
   const target: TunerTarget = {
     symbols: SYMBOLS, reels: plain(), rtp: 0.56, rtpTolerance: 0.002, seed: 20260805
   };
-  const res = tuneReels(sample-slot, target);
+  const res = tuneReels(SAMPLE, target);
   assert.ok(Math.abs(res.metrics.rtp - 0.56) <= 0.002, `rtp ${res.metrics.rtp}`);
   assert.equal(res.reelset.length, 5);
   for (let r = 0; r < 5; r++) {
@@ -44,7 +44,7 @@ test('сходится к заданному rtp в пределах допус�
     }
   }
   // Метрики результата — это метрики его лент, а не то, что тюнер думал по дороге.
-  const m = setMetrics(sample-slot, res.reelset);
+  const m = setMetrics(SAMPLE, res.reelset);
   assert.equal(m.rtp, res.metrics.rtp);
   assert.equal(m.hit, res.metrics.hit);
 });
@@ -53,10 +53,10 @@ test('детерминирован по сиду; другой сид — дру
   const t = (seed: number): TunerTarget => ({
     symbols: SYMBOLS, reels: plain(), rtp: 0.56, rtpTolerance: 0.002, seed
   });
-  const a = tuneReels(sample-slot, t(7));
-  const b = tuneReels(sample-slot, t(7));
+  const a = tuneReels(SAMPLE, t(7));
+  const b = tuneReels(SAMPLE, t(7));
   assert.deepEqual(a.reelset, b.reelset, 'один сид — одна лента');
-  const c = tuneReels(sample-slot, t(8));
+  const c = tuneReels(SAMPLE, t(8));
   assert.notDeepEqual(a.reelset, c.reelset, 'другой сид — другая раскладка');
   // Состав (а значит и rtp) от сида раскладки не зависит по построению этапов.
   assert.equal(a.metrics.rtp, c.metrics.rtp);
@@ -64,20 +64,20 @@ test('детерминирован по сиду; другой сид — дру
 });
 
 test('цель по hit берётся вторым этапом (порядок → замер → поправка состава)', () => {
-  const res = tuneReels(sample-slot, {
+  const res = tuneReels(SAMPLE, {
     symbols: SYMBOLS, reels: plain(), rtp: 0.56, rtpTolerance: 0.002,
-    hit: 0.36, hitTolerance: 0.006, seed: 20260805
+    hit: 0.40, hitTolerance: 0.006, seed: 20260805
   });
-  assert.ok(Math.abs(res.metrics.hit - 0.36) <= 0.006, `hit ${res.metrics.hit}`);
+  assert.ok(Math.abs(res.metrics.hit - 0.40) <= 0.006, `hit ${res.metrics.hit}`);
   assert.ok(Math.abs(res.metrics.rtp - 0.56) <= 0.002, `rtp ${res.metrics.rtp}`);
   assert.ok(res.rounds > 1, 'поправка по hit обязана была потребовать раундов');
 });
 
 test('rtp: max — максимум достижимого при ограничениях, а не молчаливый промах', () => {
-  const res = tuneReels(sample-slot, { symbols: SYMBOLS, reels: plain(), rtp: 'max', seed: 3 });
+  const res = tuneReels(SAMPLE, { symbols: SYMBOLS, reels: plain(), rtp: 'max', seed: 3 });
   assert.ok(res.metrics.rtp > 0.56, `потолок ${res.metrics.rtp}`);
   assert.throws(
-    () => tuneReels(sample-slot, {
+    () => tuneReels(SAMPLE, {
       symbols: SYMBOLS, reels: plain(), rtp: res.metrics.rtp + 0.05, rtpTolerance: 0.002, seed: 3
     }),
     (e: unknown) => {
@@ -92,7 +92,7 @@ test('rtp: max — максимум достижимого при огранич
 
 test('недостижимая цель по hit — ошибка с достижимым диапазоном, а не тихий промах', () => {
   assert.throws(
-    () => tuneReels(sample-slot, {
+    () => tuneReels(SAMPLE, {
       symbols: SYMBOLS, reels: plain(), rtp: 0.56, rtpTolerance: 0.002,
       hit: 0.6, hitTolerance: 0.004, seed: 20260805
     }),
@@ -115,7 +115,7 @@ test('«ровно 1 спецсимвол в окне» при длине, не 
     ],
     rtp: 'max', seed: 1
   };
-  assert.throws(() => tuneReels(sample-slot, target), (e: unknown) => {
+  assert.throws(() => tuneReels(SAMPLE, target), (e: unknown) => {
     assert.ok(e instanceof TunerError);
     assert.match(e.message, /требует периода 3, а длина ленты 40 на 3 не делится/);
     assert.match(e.message, /ближайшие: 39, 42/);
@@ -123,7 +123,7 @@ test('«ровно 1 спецсимвол в окне» при длине, не 
     return true;
   });
   // «Ровно 2 в окне» при высоте 3 не делится уже по окну, а не по длине.
-  assert.throws(() => tuneReels(sample-slot, {
+  assert.throws(() => tuneReels(SAMPLE, {
     ...target,
     reels: [{ length: 39, counts: { ...BOX, [WILD]: { exactly: 0 } }, special: { exactly: 2 } },
       reel(0, 1), reel(0, 1), reel(0, 1), reel(0, 1)]
@@ -134,7 +134,7 @@ test('структурные правила раскладки соблюден�
   const structural = (rule: object): ReelTarget => ({
     length: 39, counts: { ...BOX, [WILD]: { exactly: 0 } }, special: rule
   });
-  const res = tuneReels(sample-slot, {
+  const res = tuneReels(SAMPLE, {
     symbols: SYMBOLS,
     reels: [
       structural({ exactly: 1 }), structural({ min: 1 }),
@@ -156,20 +156,20 @@ test('структурные правила раскладки соблюден�
 });
 
 test('запрет id и противоречивые ограничения ловятся до расчёта', () => {
-  const res = tuneReels(sample-slot, {
+  const res = tuneReels(SAMPLE, {
     symbols: [...SYMBOLS, 51],
     reels: plain().map((r) => ({ ...r, forbid: [51] })),
     rtp: 0.5, rtpTolerance: 0.01, seed: 5
   });
   for (const s of res.reelset) assert.ok(s.indexOf(51) < 0, 'запрещённый id не попал на ленту');
 
-  assert.throws(() => tuneReels(sample-slot, {
+  assert.throws(() => tuneReels(SAMPLE, {
     symbols: SYMBOLS,
     reels: [{ length: 40, counts: { [LA]: { min: 30, max: 10 } } }, reel(0, 1), reel(0, 1), reel(0, 1), reel(0, 1)],
     rtp: 0.5
   }), /ограничения по символу 1 противоречивы/);
 
-  assert.throws(() => tuneReels(sample-slot, {
+  assert.throws(() => tuneReels(SAMPLE, {
     symbols: SYMBOLS,
     reels: [{ length: 40, counts: { [LA]: { exactly: 5 }, [LK]: { exactly: 5 } }, forbid: [WILD, H1, H2, M1, M2, LQ, LJ, MONEY] },
       reel(0, 1), reel(0, 1), reel(0, 1), reel(0, 1)],
