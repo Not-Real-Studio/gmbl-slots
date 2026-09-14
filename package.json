@@ -1,0 +1,35 @@
+{
+  "name": "@gmbl/gm-slots",
+  "version": "0.1.0",
+  "description": "Exact basis for line slots: paylines evaluation, reel tuner, distribution math.",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": {
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      },
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./gas": "./dist/gm-slots.gas.js"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node build-gas.mjs",
+    "build:gas": "node build-gas.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --conditions=development --test",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.3"
+  },
+  "license": "MIT",
+  "author": "Not Real Studio"
+}
