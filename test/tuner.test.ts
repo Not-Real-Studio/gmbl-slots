@@ -21,6 +21,20 @@ const BOX: Record<number, CountBound> = {
 const reel = (money: number, wild: number, length = 40): ReelTarget => ({
   length, counts: { ...BOX, [MONEY]: { exactly: money }, [WILD]: { exactly: wild } }
 });
+
+// Тот же слот, но нижние символы не обязаны быть частыми: пол по hit опускается с 0.41 до 0.31,
+// и цель по hit становится достижимой при том же RTP.
+const LOW: Record<number, CountBound> = {
+  [H1]: { min: 1, max: 4 }, [H2]: { min: 1, max: 5 },
+  [M1]: { min: 1, max: 12 }, [M2]: { min: 1, max: 12 },
+  [LA]: { min: 1, max: 12 }, [LK]: { min: 1, max: 12 },
+  [LQ]: { min: 1, max: 12 }, [LJ]: { min: 1, max: 12 }
+};
+const reelLow = (money: number, wild: number, length = 40): ReelTarget => ({
+  length, counts: { ...LOW, [MONEY]: { exactly: money }, [WILD]: { exactly: wild } }
+});
+const sparse = (): ReelTarget[] =>
+  [reelLow(0, 1), reelLow(1, 1), reelLow(1, 1), reelLow(1, 1), reelLow(0, 1)];
 const plain = (): ReelTarget[] => [reel(0, 1), reel(1, 1), reel(1, 1), reel(1, 1), reel(0, 1)];
 const count = (strip: readonly SymbolId[], id: SymbolId): number =>
   strip.filter((v) => v === id).length;
@@ -64,12 +78,14 @@ test('детерминирован по сиду; другой сид — дру
 });
 
 test('цель по hit берётся вторым этапом (порядок → замер → поправка состава)', () => {
+  // База линейного слота: RTP 0.60 (до 96% реальную игру добирают фичи), hit 0.315 — у самого
+  // пола достижимого, поэтому первый замер мимо и поправка состава обязана отработать.
   const res = tuneReels(SAMPLE, {
-    symbols: SYMBOLS, reels: plain(), rtp: 0.56, rtpTolerance: 0.002,
-    hit: 0.40, hitTolerance: 0.006, seed: 20260805
+    symbols: SYMBOLS, reels: sparse(), rtp: 0.60, rtpTolerance: 0.002,
+    hit: 0.315, hitTolerance: 0.003, seed: 20260805
   });
-  assert.ok(Math.abs(res.metrics.hit - 0.40) <= 0.006, `hit ${res.metrics.hit}`);
-  assert.ok(Math.abs(res.metrics.rtp - 0.56) <= 0.002, `rtp ${res.metrics.rtp}`);
+  assert.ok(Math.abs(res.metrics.hit - 0.315) <= 0.003, `hit ${res.metrics.hit}`);
+  assert.ok(Math.abs(res.metrics.rtp - 0.60) <= 0.002, `rtp ${res.metrics.rtp}`);
   assert.ok(res.rounds > 1, 'поправка по hit обязана была потребовать раундов');
 });
 
